@@ -1,1 +1,1 @@
-console.log("hello world");
+export const DB_NAME = "bm-system";
