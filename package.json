@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "blog managment system",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "npm run dev"
+    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
   },
   "keywords": [
     "backend"
   ],
   "author": "sandeep patel",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "prettier": "^3.4.2"
+  }
 }
