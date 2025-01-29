@@ -1,0 +1,14 @@
+{
+  "name": "bm-system",
+  "version": "1.0.0",
+  "description": "blog managment system",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run dev"
+  },
+  "keywords": [
+    "backend"
+  ],
+  "author": "sandeep patel",
+  "license": "ISC"
+}
