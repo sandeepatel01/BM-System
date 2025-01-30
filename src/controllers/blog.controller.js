@@ -173,28 +173,28 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(500, error?.message || "Comment can't be added")
   }
 });
-
 const deleteComment = asyncHandler(async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.commentId);
 
     if (!comment) {
-      throw new ApiError(404, "Comment not found")
+      throw new ApiError(404, "Comment not found");
     }
 
     if (comment.user.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, "You are not authorized to delete this comment")
+      throw new ApiError(403, "You are not authorized to delete this comment");
     }
 
-    await comment.remove();
+    await comment.deleteOne(); // ✅ FIXED
 
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Comment deleted successfully"));
   } catch (error) {
-    throw new ApiError(500, error?.message || "Comment can't be deleted")
+    throw new ApiError(500, error?.message || "Comment can't be deleted");
   }
 });
+
 
 export {
   createBlog,

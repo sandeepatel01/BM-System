@@ -1,6 +1,15 @@
 import { Router } from "express";
-import { addComment, assignBlogToEditor, createBlog, deleteBlog, deleteComment, getAllBlogs, getBlogById, updateBlog } from "../controllers/blog.controller";
-import { isAdmin, verifyJWT } from "../middlewares/auth.middleware";
+import {
+  addComment,
+  assignBlogToEditor,
+  createBlog,
+  deleteBlog,
+  deleteComment,
+  getAllBlogs,
+  getBlogById,
+  updateBlog
+} from "../controllers/blog.controller.js";
+import { isAdmin, isEditor, verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
