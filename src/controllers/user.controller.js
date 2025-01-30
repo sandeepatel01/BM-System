@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import otpGenerator from "otp-generator";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -22,9 +23,9 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, fullname, password } = req.body;
+  const { username, email, fullname, password, otp } = req.body;
 
-  if ([username, email, fullname, password].some((field) => field?.trim() === "")) {
+  if ([username, email, fullname, password, otp].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "All fields are required")
   }
 
@@ -34,6 +35,16 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (existedUser) {
     throw new ApiError(400, "User already exists")
+  }
+
+  // Find the most recent OTP for the email
+  const response = await User.find({ email }).sort({ createdAt: -1 }).limit(1)
+  console.log(response)
+
+  if (response.length === 0) {
+    throw new ApiError(400, "OTP not found")
+  } else if (otp !== response[0].otp) {
+    throw new ApiError(400, "Invalid OTP")
   }
 
   const user = await User.create({
@@ -164,12 +175,54 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 
 
-})
+});
+
+const sendVerificationEmail = asyncHandler(async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const existedUser = await User.findOne({
+      $or: [{ username }, { email }]
+    })
+
+    if (existedUser) {
+      throw new ApiError(400, "User already exists")
+    }
+
+    let otp = otpGenerator.generate(6, {
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+
+    const result = await User.findOne({ otp: otp });
+    console.log("OTP", otp)
+    console.log("Result", result)
+
+    while (result) {
+      otp = otpGenerator.generate(6, {
+        upperCaseAlphabets: false,
+      })
+    }
+
+    const otpPayload = { email, otp }
+    const otpBody = await User.create(otpPayload)
+    console.log("OTP Body", otpBody)
+
+    return res.status(200).json(
+      new ApiResponse(200, otpBody, "OTP sent successfully")
+    )
+
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong while sending email")
+  }
+});
 
 
 export {
   registerUser,
   loginUser,
   logoutUser,
-  refreshAccessToken
+  refreshAccessToken,
+  sendVerificationEmail
 };
