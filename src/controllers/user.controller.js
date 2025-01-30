@@ -24,7 +24,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, fullname, password, otp } = req.body;
+  const { username, email, fullname, password, otp, role } = req.body;
 
   if ([username, email, fullname, password, otp].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "All fields are required")
@@ -39,20 +39,22 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // Find the most recent OTP for the email
-  const response = await OTP.find({ email }).sort({ createdAt: -1 }).limit(1)
-  console.log("Response", response)
+  // const otpRecord = await OTP.findOneAndDelete({ email }).sort({ createdAt: -1 });
 
-  if (response.length === 0) {
-    throw new ApiError(400, "OTP not found")
-  } else if (otp !== response[0].otp) {
-    throw new ApiError(400, "Invalid OTP")
-  }
+  // if (!otpRecord || otpRecord.otp !== otp) {
+  //   throw new ApiError(400, "Invalid or expired OTP");
+  // }
+
+  let approved = ""
+  approved === "editor" ? (approved = false) : (approved = true)
 
   const user = await User.create({
     username: username.toLowerCase(),
     email,
     fullname,
-    password
+    password,
+    role: role || "user",
+    approved: approved
   });
 
   const createdUser = await User.findById(user._id).select("-password -refreshToken");
@@ -70,12 +72,12 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
-  if (!(email || username)) {
+  if (!username && !email) {
     throw new ApiError(400, "Email or username is required")
   }
 
   const user = await User.findOne({
-    $or: [{ email }, { username }]
+    $or: [{ username }, { email }]
   })
 
   if (!user) {
@@ -83,6 +85,7 @@ const loginUser = asyncHandler(async (req, res) => {
   };
 
   const isPasswordValid = await user.isCorrectPassword(password);
+
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid password")
   };
@@ -188,28 +191,34 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
       throw new ApiError(400, "User already exists")
     }
 
-    var otp = otpGenerator.generate(6, {
+    let otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
       lowerCaseAlphabets: false,
       specialChars: false,
     });
 
-    const result = await OTP.findOne({ otp: otp });
-    console.log("OTP", otp)
-    // console.log("Result", result)
+    let result = await OTP.findOne({ otp: otp });
+    console.log("OTP:", otp);
+    console.log("Result:", result);
 
     while (result) {
       otp = otpGenerator.generate(6, {
         upperCaseAlphabets: false,
-      })
+        lowerCaseAlphabets: false,
+        specialChars: false,
+      });
+      result = await OTP.findOne({ otp });
     }
 
-    const otpPayload = { email, otp }
-    const otpBody = await OTP.create(otpPayload)
-    console.log("OTP Body", otpBody)
+
+    const otpPayload = { email, otp };
+    const otpBody = await OTP.create(otpPayload);
+    console.log("OTP Body:", otpBody);
+
+    // await sendVerificationEmail(email, otp);
 
     return res.status(200).json(
-      new ApiResponse(200, otpBody, "OTP sent successfully")
+      new ApiResponse(200, otp, "OTP sent successfully")
     )
 
   } catch (error) {

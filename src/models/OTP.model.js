@@ -56,7 +56,7 @@ const otpSchema = new Schema({
   },
   otp: {
     type: String,
-    required: true,
+    // required: true,
   },
   createdAt: {
     type: Date,
@@ -73,7 +73,7 @@ async function sendVerificationEmail(email, otp) {
       emailTemplate(otp)
     );
     // console.log("Email sent successfully to:", email);
-    // console.log("SMTP Response:", mailResponse.response);
+    console.log("SMTP Response:", mailResponse.response);
   } catch (error) {
     console.error("Error sending email:", error.message);
     throw new Error("Failed to send OTP email");
@@ -82,12 +82,7 @@ async function sendVerificationEmail(email, otp) {
 
 otpSchema.pre("save", async function (next) {
   if (this.isNew) {
-    try {
-      console.log(" New OTP generated for:", this.email);
-      await sendVerificationEmail(this.email, this.otp);
-    } catch (error) {
-      console.error("Error in OTP pre-save hook:", error.message);
-    }
+    await sendVerificationEmail(this.email, this.otp);
   }
   next();
 });

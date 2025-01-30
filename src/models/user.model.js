@@ -8,6 +8,7 @@ const userSchema = new Schema({
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
     trim: true,
   },
   email: {
@@ -32,11 +33,19 @@ const userSchema = new Schema({
     type: String,
     enum: ["admin", "editor", "user"],
     default: "user",
+    required: true
   },
   refreshToken: {
     types: String
   },
-  isVerified: { type: Boolean, default: false },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  approved: {
+    type: Boolean,
+    default: true,
+  },
 },
   {
     timestamps: true,
