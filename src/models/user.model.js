@@ -1,8 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import mailSender from "../utils/mailSender.js";
-import emailTemplate from "../mail/emailVerificationTemplate.js"
+
 
 const userSchema = new Schema({
   username: {
@@ -37,43 +36,13 @@ const userSchema = new Schema({
   refreshToken: {
     types: String
   },
-  otp: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    expires: 60 * 5, // The document will be automatically deleted after 5 minutes of its creation time
-  },
   isVerified: { type: Boolean, default: false },
 },
   {
     timestamps: true,
   });
 
-async function sendVerificationEmail(email, otp) {
-  try {
-    const mailResponse = await mailSender(
-      email,
-      "Verification Email",
-      emailTemplate(otp)
-    );
-    console.log("Email sent successfully: ", mailResponse.response);
-  } catch (error) {
-    console.log("Error occurred while sending email: ", error);
-    throw error;
-  }
-}
 
-OTPSchema.pre("save", async function (next) {
-  console.log("New document saved to database");
-
-  if (this.isNew) {
-    await sendVerificationEmail(this.email, this.otp);
-  }
-  next();
-});
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

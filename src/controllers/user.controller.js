@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import otpGenerator from "otp-generator";
+import { OTP } from "../models/OTP.model.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -38,8 +39,8 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // Find the most recent OTP for the email
-  const response = await User.find({ email }).sort({ createdAt: -1 }).limit(1)
-  console.log(response)
+  const response = await OTP.find({ email }).sort({ createdAt: -1 }).limit(1)
+  console.log("Response", response)
 
   if (response.length === 0) {
     throw new ApiError(400, "OTP not found")
@@ -181,23 +182,21 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
   try {
     const { email } = req.body;
 
-    const existedUser = await User.findOne({
-      $or: [{ username }, { email }]
-    })
+    const existedUser = await User.findOne({ email });
 
     if (existedUser) {
       throw new ApiError(400, "User already exists")
     }
 
-    let otp = otpGenerator.generate(6, {
+    var otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
       lowerCaseAlphabets: false,
       specialChars: false,
     });
 
-    const result = await User.findOne({ otp: otp });
+    const result = await OTP.findOne({ otp: otp });
     console.log("OTP", otp)
-    console.log("Result", result)
+    // console.log("Result", result)
 
     while (result) {
       otp = otpGenerator.generate(6, {
@@ -206,7 +205,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
     }
 
     const otpPayload = { email, otp }
-    const otpBody = await User.create(otpPayload)
+    const otpBody = await OTP.create(otpPayload)
     console.log("OTP Body", otpBody)
 
     return res.status(200).json(
@@ -217,6 +216,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while sending email")
   }
 });
+
 
 
 export {
